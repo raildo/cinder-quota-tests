@@ -127,7 +127,10 @@ def update_quota(token, project_id, target, value):
     r = requests.put(cinder_url + project_id + quota_url + target,
 		   headers=headers,
 		   data=data)
-    quota = json.loads(r._content)['quota_set']['snapshots']
+    if 'forbidden' in json.loads(r._content):
+	quota = json.loads(r._content)['forbidden']['code']
+    else:
+	quota = json.loads(r._content)['quota_set']['snapshots']
     return quota
 
 def get_quota(token, project_id, target):
@@ -136,7 +139,10 @@ def get_quota(token, project_id, target):
 
     r = requests.get(cinder_url + project_id + quota_url + target,
 		   headers=headers)
-    quota = json.loads(r._content)['quota_set']['snapshots']
+    if 'forbidden' in json.loads(r._content):
+	quota = json.loads(r._content)['forbidden']['code']
+    else:
+	quota = json.loads(r._content)['quota_set']['snapshots']
     return quota
 
 
@@ -256,6 +262,23 @@ def main():
 	quota_value = 45 
 	new_cms_quota = update_quota(mike_token, production_project_id, cms_project_id, quota_value)
 	print "New CMS Quota: %s" % new_cms_quota
+
+	# Get a token for Jay in CMS
+	jay_token_json = get_token_json('Jay', cms_project_id)
+        jay_token = get_token(jay_token_json)
+
+	# Update the CMS Quota to 45
+	quota_value = 50 
+	msg_error = 403
+	new_cms_quota = update_quota(jay_token, cms_project_id, cms_project_id, quota_value)
+	if new_cms_quota == msg_error:
+		print 'Cannot update the quota for CMS with user Jay' 
+
+	# Update the Visualisation with a token for Jay
+	quota_value = 10 
+	new_visualisation_quota = update_quota(jay_token, cms_project_id, visualisation_project_id, quota_value)
+	if new_visualisation_quota == msg_error:
+		print 'Cannot update the quota for Visualisation with user Jay (Problably a bug)' 
 
     except Exception:
         tear_down(token, [production_project_id,
