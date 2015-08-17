@@ -8,7 +8,7 @@ import testtools
 
 
 keystone_url = "http://10.4.13.14:35357/v3"
-cinder_url = "http://10.4.13.14:8776/v2"
+cinder_url = "http://10.4.13.14:8776/v2/"
 quota_url = "/os-quota-sets/"
 project_url = keystone_url + "/projects"
 domain_url = keystone_url + "/domains"
@@ -127,7 +127,8 @@ def update_quota(token, project_id, target, value):
     r = requests.put(cinder_url + project_id + quota_url + target,
 		   headers=headers,
 		   data=data)
-    return json.loads(r._content)['quota_set']['snapshots']
+    quota = json.loads(r._content)['quota_set']['snapshots']
+    return quota
 
 def get_quota(token, project_id, target):
     headers = {'X-Auth-Token': token,
@@ -135,7 +136,9 @@ def get_quota(token, project_id, target):
 
     r = requests.get(cinder_url + project_id + quota_url + target,
 		   headers=headers)
-    return json.loads(r._content)['quota_set']['snapshots']
+    quota = json.loads(r._content)['quota_set']['snapshots']
+    return quota
+
 
 def dict_to_list(item, final_list):
     if isinstance(item, dict):
@@ -236,12 +239,23 @@ def main():
 	print "Ducnan: %s" % duncan 
         grant_user_role(token, duncan, admin_role, [visualisation_project_id])
 
-	import pdb; pdb.set_trace()
+	# Get a token for Mike in ProductionIT
 	mike_token_json = get_token_json('Mike', production_project_id)
         mike_token = get_token(mike_token_json)
-	quota = get_quota(mike_token, production_project_id, cms_project_id)
-	print quota
+
+	# Update the Prduction Quota to 100
+	quota_value = 100 
+	production_quota = update_quota(mike_token, production_project_id, production_project_id, quota_value)
+	print "New Production Quota: %s" % production_quota
+
+	# Verify that the default quotas for CMS is zero
+	cms_quota = get_quota(mike_token, production_project_id, cms_project_id)
+	print "Get Default CMS Quota: %s" % cms_quota
      
+	# Update the CMS Quota to 45
+	quota_value = 45 
+	new_cms_quota = update_quota(mike_token, production_project_id, cms_project_id, quota_value)
+	print "New CMS Quota: %s" % new_cms_quota
 
     except Exception:
         tear_down(token, [production_project_id,
