@@ -252,35 +252,69 @@ def main():
 	# Update the Prduction Quota to 100
 	quota_value = 100 
 	production_quota = update_quota(mike_token, production_project_id, production_project_id, quota_value)
-	print "New Production Quota: %s" % production_quota
+	print "Mike updating Production Quota: %s" % production_quota
 
 	# Verify that the default quotas for CMS is zero
 	cms_quota = get_quota(mike_token, production_project_id, cms_project_id)
-	print "Get Default CMS Quota: %s" % cms_quota
+	print "Mike getting CMS Quota: %s" % cms_quota
      
 	# Update the CMS Quota to 45
 	quota_value = 45 
 	new_cms_quota = update_quota(mike_token, production_project_id, cms_project_id, quota_value)
-	print "New CMS Quota: %s" % new_cms_quota
+	print "Mike updating CMS Quota: %s" % new_cms_quota
 
 	# Get a token for Jay in CMS
 	jay_token_json = get_token_json('Jay', cms_project_id)
         jay_token = get_token(jay_token_json)
 
-	# Update the CMS Quota to 45
+	# Raise a exception when try update the CMS Quota with only a project_admin
 	quota_value = 50 
-	msg_error = 403
+	forbidden_error = 403
 	new_cms_quota = update_quota(jay_token, cms_project_id, cms_project_id, quota_value)
-	if new_cms_quota == msg_error:
+	if new_cms_quota == forbidden_error:
 		print 'Cannot update the quota for CMS with user Jay' 
 
-	# Update the Visualisation with a token for Jay
+	# Verify that the default quotas for Visualisation is zero
+	cms_quota = get_quota(jay_token, cms_project_id, cms_project_id)
+	print "Jay getting the CMS Quota: %s" % cms_quota
+
+	# Raise a exception when try update the Visualisation Quota with a project_admin in a non-root project
 	quota_value = 10 
 	new_visualisation_quota = update_quota(jay_token, cms_project_id, visualisation_project_id, quota_value)
-	if new_visualisation_quota == msg_error:
-		print 'Cannot update the quota for Visualisation with user Jay (Problably a bug)' 
+	if new_visualisation_quota == forbidden_error:
+		print 'Cannot update the quota for Visualisation with user Jay' 
 
-    except Exception:
+	# Raise a exception when try get the Visualisation Quota with a project_admin in a non-root project
+	visualisation_quota = get_quota(jay_token, cms_project_id, visualisation_project_id)
+	if visualisation_quota == forbidden_error:
+		print 'Cannot get the quota for Visualisation with user Jay' 
+
+	# Raise a exception when try get the Atlas Quota with a project_admin in a non-root project
+	atlas_quota = get_quota(jay_token, cms_project_id, atlas_project_id)
+	if atlas_quota == forbidden_error:
+		print 'Cannot get the quota for Atlas with user Jay' 
+	
+	# Get a token for Duncan in Visualisation
+	duncan_token_json = get_token_json('Duncan', visualisation_project_id)
+        duncan_token = get_token(duncan_token_json)
+
+	# Raise a exception when try get the Atlas Quota with a project_admin in a subproject
+	cms_quota = get_quota(duncan_token, visualisation_project_id, cms_project_id)
+	if cms_quota == forbidden_error:
+		print 'Cannot get the quota for CMS with user Duncan' 
+	
+	# Raise a exception when try update the Visualisation Quota with a project_admin in a non-root project
+	quota_value = 10 
+	new_visualisation_quota = update_quota(duncan_token, visualisation_project_id, visualisation_project_id, quota_value)
+	if new_visualisation_quota == forbidden_error:
+		print 'Cannot update the quota for Visualisation with user Duncan' 
+
+	# Raise a exception when try get the Visualisation Quota with a project_admin in a non-root project
+	visualisation_quota = get_quota(duncan_token, visualisation_project_id, visualisation_project_id)
+	print 'Duncan getting the Quota for Visualisation %s' % visualisation_quota
+
+    except Exception as e:
+	print 'Error'
         tear_down(token, [production_project_id,
 	          cms_project_id, 
                   atlas_project_id,
@@ -288,8 +322,7 @@ def main():
                   visualisation_project_id,
                   services_project_id,
                   operations_project_id], domain_id)
-	raise Exception
-         
+        print e 
     tear_down(token, [production_project_id,    
               cms_project_id, 
               atlas_project_id,
