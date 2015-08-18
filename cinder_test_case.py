@@ -309,7 +309,7 @@ def main():
 	if new_visualisation_quota == forbidden_error:
 		print 'Cannot update the quota for Visualisation with user Duncan' 
 
-	# Raise a exception when try get the Visualisation Quota with a project_admin in a non-root project
+	# Verify that the default quotas for Visualisation is zero
 	visualisation_quota = get_quota(duncan_token, visualisation_project_id, visualisation_project_id)
 	print 'Duncan getting the Quota for Visualisation %s' % visualisation_quota
 
