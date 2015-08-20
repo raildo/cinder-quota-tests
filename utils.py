@@ -141,3 +141,11 @@ def get_quota(token, project_id, target):
     else:
 	quota = json.loads(r._content)['quota_set']['snapshots']
     return quota
+
+def quota_show(token, project_id, target):
+    headers = {'X-Auth-Token': token,
+               'Content-Type': 'application/json'}
+
+    r = requests.get(cinder_url + project_id + quota_url + target + '?usage=true',
+     		      headers=headers,)
+    return json.loads(r._content)['quota_set']['snapshots']
