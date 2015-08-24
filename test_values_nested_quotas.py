@@ -1,9 +1,6 @@
 import utils
 import sqlalchemy
 
-admin_role = '33971aadbc144a63a8ba727560dfcb58'
-member_role = 'bff83b7970c34528b2ad80afd0af4c4f'
-
 def tear_down(token, projects, domain):
     for project_id in projects:
         utils.disable_project(token, project_id)
@@ -76,6 +73,7 @@ def main():
 						     token)
         print "Operations: %s" % operations_project_id
      
+	admin_role = utils.get_role(token, 'admin')
         # Creating users
 	# Creating and grant admin role to mike in production
         mike = utils.create_user(token, 'Mike', domain_id)
@@ -203,6 +201,7 @@ def main():
 	quota_show_cms = utils.quota_show(mike_token, production_project_id, cms_project_id)
 	quota_show_computing = utils.quota_show(mike_token, production_project_id, computing_project_id)
 	quota_show_visualisation = utils.quota_show(mike_token, production_project_id, visualisation_project_id)
+	quota_show_atlas = utils.quota_show(mike_token, production_project_id, atlas_project_id)
 	quota_show_services = utils.quota_show(mike_token, production_project_id, services_project_id)
 	print "Production Quota: %s" % quota_show_production
 	print "CMS Quota: %s" % quota_show_cms
@@ -222,6 +221,7 @@ def main():
 	quota_show_cms = utils.quota_show(mike_token, production_project_id, cms_project_id)
 	quota_show_computing = utils.quota_show(mike_token, production_project_id, computing_project_id)
 	quota_show_visualisation = utils.quota_show(mike_token, production_project_id, visualisation_project_id)
+	quota_show_atlas = utils.quota_show(mike_token, production_project_id, atlas_project_id)
 	quota_show_services = utils.quota_show(mike_token, production_project_id, services_project_id)
 	quota_show_operations = utils.quota_show(mike_token, production_project_id, operations_project_id)
 	print "Production Quota: %s" % quota_show_production
@@ -232,6 +232,31 @@ def main():
 	print "Service Quota: %s" % quota_show_services
 	print "Operations Quota: %s" % quota_show_operations
 	print '======== ---- ======='
+	# Update the CMS Quota to 40
+	quota_value = 71 
+	print 'Trying update the CMS quota for 71...'
+	cms_quota = utils.update_quota(mike_token, 
+				       production_project_id,
+				       cms_project_id,
+				       quota_value)
+	print "CMS Quota: Error: %s" % cms_quota
+	print "Creating Volumes..."
+	# Get a token for Jay in CMS
+	jay_token_json = utils.get_token_json('Jay', cms_project_id)
+        jay_token = utils.get_token(jay_token_json)
+
+	for i in range(0,10):
+	    utils.create_volume(jay_token, cms_project_id)
+	quota_show_cms = utils.quota_show(jay_token, cms_project_id, cms_project_id)
+	print "CMS Quota: %s" % quota_show_cms
+	print "Trying update the computing quota to 16..."
+	quota_value = 16 
+	computing_quota = utils.update_quota(mike_token, 
+				       production_project_id,
+				       computing_project_id,
+				       quota_value)
+	print "Computing Quota: Error: %s" % computing_quota
+
     except Exception as e:
 	print 'Error'
         tear_down(token, [production_project_id,

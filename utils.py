@@ -33,6 +33,14 @@ def get_token(token_json):
                       data=token_json)
     return r.headers['x-subject-token']
 
+def get_role(token, name):
+    headers = {'X-Auth-Token': token,
+               'Content-Type': 'application/json'}
+
+    r = requests.get(keystone_url + '/roles?name=%s' % name,
+           	     headers=headers)
+    return json.loads(r._content)['roles'][0]['id']
+
 def create_domain(data, token):
     create_domain_headers = {'X-Auth-Token': token,
                              'Content-Type': 'application/json'}
@@ -120,14 +128,16 @@ def update_quota(token, project_id, target, value):
     headers = {'X-Auth-Token': token,
                'Content-Type': 'application/json'}
 
-    data = '{ "quota_set": { "snapshots": %s } }' % value
+    data = '{ "quota_set": { "volumes": %s } }' % value
     r = requests.put(cinder_url + project_id + quota_url + target,
 		   headers=headers,
 		   data=data)
     if 'forbidden' in json.loads(r._content):
 	quota = json.loads(r._content)['forbidden']['code']
+    elif 'badRequest' in json.loads(r._content):
+	quota = json.loads(r._content)['badRequest']['message']
     else:
-	quota = json.loads(r._content)['quota_set']['snapshots']
+	quota = json.loads(r._content)['quota_set']['volumes']
     return quota
 
 def get_quota(token, project_id, target):
@@ -139,7 +149,7 @@ def get_quota(token, project_id, target):
     if 'forbidden' in json.loads(r._content):
 	quota = json.loads(r._content)['forbidden']['code']
     else:
-	quota = json.loads(r._content)['quota_set']['snapshots']
+	quota = json.loads(r._content)['quota_set']['volumes']
     return quota
 
 def quota_show(token, project_id, target):
@@ -147,5 +157,17 @@ def quota_show(token, project_id, target):
                'Content-Type': 'application/json'}
 
     r = requests.get(cinder_url + project_id + quota_url + target + '?usage=true',
-     		      headers=headers,)
-    return json.loads(r._content)['quota_set']['snapshots']
+     		      headers=headers)
+    quota = json.loads(r._content)['quota_set']['volumes']
+    return quota
+
+def create_volume(token, project_id):
+    headers = {'X-Auth-Token': token,
+               'Content-Type': 'application/json'}
+    data = '{ "volume": { "status": "creating", "description": null, "availability_zone": null, "source_volid": null, "consistencygroup_id": null, "snapshot_id": null, "source_replica": null, "size": 10, "user_id": null, "name": null, "imageRef": null, "attach_status": "detached", "volume_type": null, "project_id": null, "metadata": {} } }'
+    r = requests.post(cinder_url + project_id + '/volumes', 
+		      headers=headers,
+		      data=data)
+
+    return json.loads(r._content)['volume']['id']
+
