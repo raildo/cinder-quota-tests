@@ -1,4 +1,5 @@
 import utils
+import sys
 
 def dict_to_list(item, final_list):
     if isinstance(item, dict):
@@ -15,6 +16,10 @@ def tear_down(token, projects, domain):
     utils.delete_domain(token, domain)
 
 def main():
+    f = open('log_test_authorization_cider.txt', 'w')
+    original = sys.stdout
+    sys.stdout = utils.Tee(sys.stdout, f)
+
     token = 0
     domain_id, production_project_id, cms_project_id, atlas_project_id = (0, )*4
     computing_project_id, visualisation_project_id, services_project_id = (0, )*3
@@ -36,7 +41,8 @@ def main():
 	print '      Computing   Visualisation   Operations   Services  '
 	print '       Walter        Duncan          Eric         Xing'
 	print ''
-	print ' Actors:'
+	print 'Actors:'
+	print ''
 	print 'Mike - Cloud Admin (i.e. role:cloud-admin) of ProductionIT'
 	print 'Jay - Manager (i.e. role: project-admin) of Project CMS'
 	print 'John - Manager (i.e. role: project-admin) of Project ATLAS'
@@ -115,7 +121,7 @@ def main():
 	# Creating and grant admin role to mike in production
  	print 'Creating the users...'    
         mike = utils.create_user(token, 'Mike', domain_id)
-	print "Mike created: %s" % mike
+	print "Mike: %s" % mike
         utils.grant_user_role(token, mike,
 			      admin_role, [production_project_id])
 
@@ -161,7 +167,6 @@ def main():
         utils.grant_user_role(token, duncan,
 			      admin_role, [visualisation_project_id])
 	print '======================================================================='
-
 	print 'Now, we will get a token for Mike in ProductionIT (root project)'
 	print 'and show that Mike can update the quota for the root project.'
 	print '======================================================================='
@@ -173,7 +178,7 @@ def main():
 	print '======================================================================='
 
 	# Update the Production Quota to 100
-	print 'Trying update the ProductionIT quota for 100...'
+	print 'Updating the ProductionIT quota for 100...'
 	quota_value = 100 
 	production_quota = utils.update_quota(mike_token, 
 					      production_project_id,
@@ -235,7 +240,9 @@ def main():
                                                      visualisation_project_id,
 					             quota_value)
 	if new_visualisation_quota == forbidden_error:
-		print 'Error: Cannot update the quota for Visualisation with user Jay' 
+	    print 'Error: Cannot update the quota for Visualisation with user Jay' 
+	else:
+	    print 'New Visualisation Quota: %s ' % new_visualisation_quota 
 	print '======================================================================='
 
 	# Raise a exception when try get the Visualisation Quota with a
@@ -245,7 +252,9 @@ def main():
 					      cms_project_id,
 					      visualisation_project_id)
 	if visualisation_quota == forbidden_error:
-		print 'Error: Cannot get the quota for Visualisation with user Jay' 
+   	    print 'Error: Cannot get the quota for Visualisation with user Jay' 
+	else:
+	    print 'Get Visualisation Quota: %s ' % new_visualisation_quota 
 	print '======================================================================='
 	# Raise a exception when try get the Atlas Quota with a project_admin
 	# in a non-root project
@@ -254,7 +263,6 @@ def main():
 				      atlas_project_id)
 	if atlas_quota == forbidden_error:
 		print 'Error: Cannot get the quota for Atlas with user Jay' 
-	print 'Trying get the Atlas Quota with Jay'
 	print '======================================================================='
 	
 	# Get a token for Duncan in Visualisation
@@ -269,7 +277,7 @@ def main():
 				    visualisation_project_id,
 				    cms_project_id)
 	if cms_quota == forbidden_error:
-		print 'Error: Cannot get the quota for CMS with user Duncan' 
+   	    print 'Error: Cannot get the quota for CMS with user Duncan' 
 	print '======================================================================='
 	
 	# Raise a exception when try update the Visualisation Quota
@@ -289,6 +297,7 @@ def main():
 				       visualisation_project_id)
 	print ('Duncan getting the Visualisation Quota: %s' % visual_quota)
 	print '======================================================================='
+	print 'Clean up...'
 
     except Exception as e:
 	print 'Error'
@@ -299,6 +308,7 @@ def main():
                   visualisation_project_id,
                   services_project_id,
                   operations_project_id], domain_id)
+    	f.close()
         print e 
     tear_down(token, [production_project_id,    
               cms_project_id, 
@@ -307,6 +317,7 @@ def main():
 	      visualisation_project_id,
 	      services_project_id,
 	      operations_project_id], domain_id)
+    f.close()
 
 if __name__ == "__main__":
     main()
