@@ -2,24 +2,25 @@ from keystoneclient.auth.identity import v3
 from keystoneclient import session
 from keystoneclient.v3 import client as keystoneclient
 from subprocess import call, Popen, PIPE
-import requests
+
 import json
+import requests
 import testtools
 
-keystone_url = "http://10.4.13.14:35357/v3"
-cinder_url = "http://10.4.13.14:8776/v2/"
+keystone_url = "http://localhost:35357/v3"
+nova_url = "http://localhost:8774/v2.1/"
 quota_url = "/os-quota-sets/"
 project_url = keystone_url + "/projects"
 domain_url = keystone_url + "/domains"
 
 def get_token_json(name, project_id):
-    return '{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "domain": { "name": "Domain" }, "name": "%s", "password": "secretsecret" } } }, "scope": { "project": { "domain": { "name": "Domain" }, "id": "%s" } } } }' % (name, project_id)
+    return '{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "domain": { "name": "DomainX" }, "name": "%s", "password": "secretsecret" } } }, "scope": { "project": { "domain": { "name": "DomainX" }, "id": "%s" } } } }' % (name, project_id)
 
 def default_token_json(name, project_id):
-    return '{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "domain": { "name": "Default" }, "name": "%s", "password": "nomoresecrete" } } }, "scope": { "project": { "domain": { "name": "Default" }, "name": "%s" } } } }' % (name, project_id)
+    return '{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "domain": { "name": "Default" }, "name": "%s", "password": "d3v5t4ck@LSD1" } } }, "scope": { "project": { "domain": { "name": "Default" }, "name": "%s" } } } }' % (name, project_id)
 
 def domain_json():
-    return '{ "domain": { "desctiption": "My new domain", "enabled": true, "name": "Domain" } }' 
+    return '{ "domain": { "desctiption": "My new domain", "enabled": true, "name": "DomainX" } }' 
 
 def project_json(name, domain_id, parent_id=None):
     return '{ "project": { "description": "My new project", "domain_id": "%s", "parent_id": "%s", "enabled": true, "name": "%s" } }' % (domain_id, parent_id, name) if parent_id else '{ "project": { "description": "My new project", "domain_id": "%s", "enabled": true, "name": "%s"} }' % (domain_id, name) 
@@ -128,8 +129,8 @@ def update_quota(token, project_id, target, value):
     headers = {'X-Auth-Token': token,
                'Content-Type': 'application/json'}
 
-    data = '{ "quota_set": { "volumes": %s } }' % value
-    r = requests.put(cinder_url + project_id + quota_url + target,
+    data = '{ "quota_set": { "security_groups": %s } }' % value
+    r = requests.put(nova_url + project_id + quota_url + target,
 		   headers=headers,
 		   data=data)
     if 'forbidden' in json.loads(r._content):
@@ -137,39 +138,39 @@ def update_quota(token, project_id, target, value):
     elif 'badRequest' in json.loads(r._content):
 	quota = json.loads(r._content)['badRequest']['message']
     else:
-	quota = json.loads(r._content)['quota_set']['volumes']
+	quota = json.loads(r._content)['quota_set']['security_groups']
     return quota
 
 def get_quota(token, project_id, target):
     headers = {'X-Auth-Token': token,
                'Content-Type': 'application/json'}
 
-    r = requests.get(cinder_url + project_id + quota_url + target,
+    r = requests.get(nova_url + project_id + quota_url + target,
 		   headers=headers)
     if 'forbidden' in json.loads(r._content):
 	quota = json.loads(r._content)['forbidden']['code']
     else:
-	quota = json.loads(r._content)['quota_set']['volumes']
+	quota = json.loads(r._content)['quota_set']['security_groups']
     return quota
 
 def quota_show(token, project_id, target):
     headers = {'X-Auth-Token': token,
                'Content-Type': 'application/json'}
 
-    r = requests.get(cinder_url + project_id + quota_url + target + '?usage=true',
+    r = requests.get(nova_url + project_id + quota_url + target + '?usage=true',
      		      headers=headers)
-    quota = json.loads(r._content)['quota_set']['volumes']
+    quota = json.loads(r._content)['quota_set']['security_groups']
     return quota
 
-def create_volume(token, project_id):
+def create_security_group(token, project_id, name):
     headers = {'X-Auth-Token': token,
                'Content-Type': 'application/json'}
-    data = '{ "volume": { "status": "creating", "description": null, "availability_zone": null, "source_volid": null, "consistencygroup_id": null, "snapshot_id": null, "source_replica": null, "size": 10, "user_id": null, "name": null, "imageRef": null, "attach_status": "detached", "volume_type": null, "project_id": null, "metadata": {} } }'
-    r = requests.post(cinder_url + project_id + '/volumes', 
+    data = '{ "security_group": { "name": "%s" , "description": "test" } }' % name
+    r = requests.post(nova_url + project_id + '/os-security-groups', 
 		      headers=headers,
 		      data=data)
+    return json.loads(r._content)['security_group']['id']
 
-    return json.loads(r._content)['volume']['id']
 
 class Tee(object):
     def __init__(self, *files):

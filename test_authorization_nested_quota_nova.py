@@ -16,7 +16,7 @@ def tear_down(token, projects, domain):
     utils.delete_domain(token, domain)
 
 def main():
-    f = open('log_test_authorization_cider.txt', 'w')
+    f = open('log_test_authorization_nova.txt', 'w')
     original = sys.stdout
     sys.stdout = utils.Tee(sys.stdout, f)
 
@@ -29,7 +29,7 @@ def main():
         token = utils.get_token(token_json)
 	print '======================================================================='
         print 'This script will use the follow hierarchy to validate the authorization' 
-	print 'actions related to Nested Quotas on Cinder'
+	print 'actions related to Nested Quotas on Nova'
 	print '======================================================================='
 	print 'Hierarchy:'
 	print '                            Domain_X          '
@@ -51,6 +51,7 @@ def main():
 	print 'Walter - Manager (i.e. role: project-admin) of Project Computing'
 	print 'Duncan - Manager (i.e. role: project-admin) of Project Visualisation'
 	print '======================================================================='
+	raw_input("")
 	admin_role = utils.get_role(token, 'admin')
         # Create a new domain
  	print 'Creating the domain...'    
@@ -223,7 +224,7 @@ def main():
 					   cms_project_id,
 					   quota_value)
 	if new_cms_quota == forbidden_error:
-		print 'Error: Cannot update the quota for CMS with user Jay' 
+		print 'Error: Cannot update the quota for CMS with user Jay'
 
 	print '======================================================================='
 	# Verify that the default quotas for Visualisation is zero
@@ -262,9 +263,9 @@ def main():
 				      cms_project_id,
 				      atlas_project_id)
 	if atlas_quota == forbidden_error:
-		print 'Error: Cannot get the quota for Atlas with user Jay' 
+		print 'Error: Cannot get the quota for Atlas with user Jay'
 	print '======================================================================='
-	
+
 	# Get a token for Duncan in Visualisation
 	duncan_token_json = utils.get_token_json('Duncan',
 						 visualisation_project_id)
@@ -277,12 +278,12 @@ def main():
 				    visualisation_project_id,
 				    cms_project_id)
 	if cms_quota == forbidden_error:
-   	    print 'Error: Cannot get the quota for CMS with user Duncan' 
+   	    print 'Error: Cannot get the quota for CMS with user Duncan'
 	print '======================================================================='
-	
+
 	# Raise a exception when try update the Visualisation Quota
 	# with a project_admin in a non-root project
-	quota_value = 10 
+	quota_value = 10
 	new_visualisation_quota = utils.update_quota(duncan_token,
 						     visualisation_project_id,
 						     visualisation_project_id,

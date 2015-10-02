@@ -303,8 +303,9 @@ def main():
 	jay_token_json = utils.get_token_json('Jay', cms_project_id)
         jay_token = utils.get_token(jay_token_json)
 
-	for i in range(0,10):
-	    utils.create_volume(jay_token, cms_project_id)
+	import pdb; pdb.set_trace()
+	for i in range(0,9):
+	    utils.create_security_group(jay_token, cms_project_id, i)
 	quota_show_cms = utils.quota_show(jay_token, cms_project_id, cms_project_id)
 	print "CMS Quota: %s" % quota_show_cms
 	print 'Now, we dont have free quota in CMS'
@@ -320,7 +321,7 @@ def main():
 	print 'Clean up...'
 
     except Exception as e:
-	print 'Error'
+	print 'Error: %s' % e
         tear_down(token, [production_project_id,
 	          cms_project_id, 
                   atlas_project_id,
